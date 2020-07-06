@@ -1,0 +1,708 @@
+<meta charset="utf-8">
+<html>
+  <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- jQuery -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="d3sparql.js"></script>
+
+    <link href="https://unpkg.com/@triply/yasgui/build/yasgui.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/@triply/yasgui/build/yasgui.min.js"></script>
+  </head>
+  <body>
+    <div id="query" class="container">
+    <h1>BONSAI Sparql Endpoint</h1>
+      <div class="row">
+        <select id="queryTemplate" onchange="func()">
+          <option selected="selected" disabled="disabled">Select a query, or write own</option>
+          <option value="activitytype">Activity Types</option>
+          <option value="location">Locations</option>
+          <option value="flowobject">Flow Objects</option>
+          <option value="inputFlowLocation">Input Flows by Location</option>
+          <option value="outputFlowLocation">Output Flows by Location</option>
+          <option value="chinaSteel">Production of Steel from China</option>
+          <option value="chinaActivitiesUsingSteel">Chinese Activities using Steel</option>
+          <option value="chinasteelparticulatematter">Chinese Particulate Matter Emission from Steel Production</option>
+          <option value="chinaSteelCarbonDioxide">Chinese Carbon Dioxide Emission from Steel Production</option>
+          <option value="isFlowDeterminingForActivity">Is flow with objectType x a determining flow for Activity y</option>
+          <option value="isFlowRequiredForActivity">Is flow with objectType x a required for Activity Y</option>
+          <option value="listRequiredInputFlowsForActivities">List objectTypes required for activities</option>
+          <option value="totalFlowInPeriod">Total flow of objectType in period</option>
+          <option value="unitTypesForFlows">In which unit are flowObjects Measured</option>
+          <option value="overBalancedFlows">Which flows are overbalanced</option>
+          <option value="underBalancedFlows">Which flows are underbalanced</option>
+          <option value="amountOfFlowUsedAsInputForActivity">Amount of flowObject f used in Activity a in Location l</option>
+          <option value="amountOfFlowOutputOfObjectForActivity">Amount of flowObject f as output of Activity a in Location l</option>
+          <option value="activitiesAndDeterminingFlows">What are the determining flows for all activities in locaiton l</option>
+          <option value="user">User Defined</option>
+        </select>  
+      </div>
+      <div class="row">
+        <form class="form-inline">
+          <div id="selections"></div>
+        </form>
+        <div class="col">
+          <div id="yasgui"></div>
+          <script>
+            const yasgui = new Yasgui(document.getElementById("yasgui"), {
+              requestConfig: { endpoint: 'http://odas.aau.dk/sparql' },
+              copyEndpointOnNewTab: true
+            });
+          </script>
+          <style>
+            .yasgui .autocompleteWrapper {display: none !important;}
+            .tabsList {display: none !important;}
+            .controlbar {display: none !important;}
+          </style>
+        </div>
+      </div>
+    </div>
+    <div id="result"></div>
+ <script>
+    var changeCounter = -1;
+    function func(){
+        changeCounter = -1
+        var dropdown = document.getElementById("queryTemplate");
+        var queryType = dropdown.value;
+
+        var selectionFields = '<form class="form-inline"><div class="input-append">'
+        selectionFields += newFields(queryType)
+        selectionFields += '</div></form>'
+
+
+        selectionsDiv = document.getElementById("selections")
+        selectionsDiv.innerHTML = selectionFields
+
+        changeQueryText()
+      }
+
+    function changeQueryText(){
+        changeCounter += 1
+        var dropdown = document.getElementById("queryTemplate");
+        var queryType = dropdown.value;
+
+        tab = yasgui.getTab()
+        query = queryText(queryType)
+        tab.setQuery(query)
+    }
+
+
+    function newFields(queryType) {
+      selectionFields = ""
+      // Add database selection
+      if (["activitytype", "location", "flowobject",  "inputFlowLocation", "outputFlowLocation", "isFlowDeterminingForActivity", "isFlowRequiredForActivity", "listRequiredInputFlowsForActivities", "totalFlowInPeriod", "unitTypesForFlows", "overBalancedFlows", "underBalancedFlows", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows", "chinaSteel"].includes(queryType)) {
+        selectionFields += '<select id="dataset" onchange="changeQueryText()">' +
+                              '<option value="exiobase3_3_17" selected="selected" disabled="disabled">Select a dataset</option>' +
+                              '<option value="exiobase3_3_17">Exiobase 3.3.17</option>' +
+                              '<option value="ystafdb">YSTAFDB</option>' +
+                           '</select></br>'
+      }
+
+      // Add location text search
+      if (["inputFlowLocation", "outputFlowLocation", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows"].includes(queryType)) {
+        selectionFields += '<form>' +
+                            '<label for="location_input">Location: </label>' +
+                            '<input id="location_input" name="location_input" type="text" value="DK" onKeyUp="changeQueryText()">' +
+                           '</form>' 
+                            
+      }
+
+      // Add flowObject text search
+      if (["isFlowDeterminingForActivity", "isFlowRequiredForActivity", "totalFlowInPeriod", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity"].includes(queryType)) {
+        selectionFields += '<form>' +
+                            '<label for="object_type_input">Flow Object: </label>' +
+                            '<input id="object_type_input" name="object_type_input" type="text" value="Wheat" onKeyUp="changeQueryText()">' +
+                           '</form>'       
+      }
+
+      // Add ActivityType search Text
+      if (["isFlowDeterminingForActivity", "isFlowRequiredForActivity", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity"].includes(queryType)) {
+        selectionFields += '<form>' +
+                            '<label for="activity_type_input">Activity Type: </label>' +
+                            '<input id="activity_type_input" name="activity_type_input" type="text" value="Cultivation of wheat" onKeyUp="changeQueryText()">' +
+                           '</form>'       
+      }
+
+      return selectionFields 
+    }
+
+
+    function queryText(queryType) {
+      exiobase_graphs = "FROM <http://rdf.bonsai.uno/data/exiobase3_3_17/hsup>\n" +
+                        "FROM <http://rdf.bonsai.uno/data/exiobase3_3_17/huse>\n" +
+                        "FROM <http://rdf.bonsai.uno/data/exiobase3_3_17/emission>\n" +
+                        "FROM <http://rdf.bonsai.uno/location/exiobase3_3_17>\n" +
+                        "FROM <http://rdf.bonsai.uno/flowobject/exiobase3_3_17>\n" +
+                        "FROM <http://rdf.bonsai.uno/activitytype/exiobase3_3_17>\n" +
+                        "FROM <http://rdf.bonsai.uno/unit>\n" +
+                        "FROM <http://rdf.bonsai.uno/time>\n"
+        
+      ystafdb_graphs = "FROM <http://rdf.bonsai.uno/data/ystafdb/huse>\n" +
+                       "FROM <http://rdf.bonsai.uno/location/ystafdb>\n"  +
+                       "FROM <http://rdf.bonsai.uno/flowobject/ystafdb>\n"  +
+                       "FROM <http://rdf.bonsai.uno/activitytype/ystafdb>\n" +
+                       "FROM <http://rdf.bonsai.uno/unit>\n" +
+                       "FROM <http://rdf.bonsai.uno/time>\n"
+        
+      query = ""
+
+      if (queryType == "activitytype") {
+        dataset = document.getElementById("dataset")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" + 
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\n" + 
+
+                "SELECT * \n" + 
+                "FROM <http://rdf.bonsai.uno/activitytype/" + dataset.value + ">\n" +
+                "WHERE\n" +
+                "{\n" +
+                "  ?activity a bont:ActivityType .\n" +
+                "  ?activity rdfs:label ?label\n" +
+                "}\n"
+      }
+
+      else if (queryType == "location") {
+        dataset = document.getElementById("dataset")
+        query = "PREFIX schema: <http://schema.org/>\n" + 
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\n" + 
+
+                "SELECT * \n" + 
+                "FROM <http://rdf.bonsai.uno/location/" + dataset.value + ">\n" +
+                "WHERE\n" +
+                "{\n" +
+                "  ?location a schema:Place .\n" +
+                "  ?location rdfs:label ?label\n" +
+                "}\n"
+      }
+      else if (queryType == "flowobject") {
+        dataset = document.getElementById("dataset")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\n" + 
+
+                "SELECT * \n" + 
+                "FROM <http://rdf.bonsai.uno/flowobject/" + dataset.value + ">\n"
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?flowobject a bont:FlowObject .\n" +
+                 "  ?flowobject rdfs:label ?label\n" +
+                 "}\n"
+      }
+
+      else if (queryType == "inputFlowLocation") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        location_input = document.getElementById("location_input")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+
+                "SELECT ?activityType ?flowObject (xsd:string(?value) as ?value) ?unit\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                "{\n" +
+                "  ?flow a bont:Flow .\n" +
+                "  ?flow bont:isInputOf ?act .\n" +
+                "  ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\".\n" +
+                "  ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
+                "  ?flow bont:hasObjectType / rdfs:label ?flowObject .\n" +
+                "  ?flow om2:hasNumericalValue ?value .\n" +
+                "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
+                "}\n"
+      }
+
+      else if (queryType == "outputFlowLocation") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        location_input = document.getElementById("location_input")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+
+                "SELECT ?activityType ?flowObject (xsd:string(?value) as ?value) ?unit\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                "{\n" +
+                "  ?flow a bont:Flow .\n" +
+                "  ?flow bont:isOutputOf ?act .\n" +
+                "  ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\".\n" +
+                "  ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
+                "  ?flow bont:hasObjectType / rdfs:label ?flowObject .\n" +
+                "  ?flow om2:hasNumericalValue ?value .\n" +
+                "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
+                "}\n"
+      }
+
+      else if (queryType == "chinaSteel") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+
+                "SELECT ?activityType (xsd:string(?value) as ?value) ?unit\n"
+
+        query += exiobase_graphs
+
+        query += "WHERE\n" +
+                "{\n" +
+                "  ?flow a bont:Flow .\n" +
+                "  ?flow bont:isOutputOf ?act .\n" +
+                "  ?act bont:hasLocation / rdfs:label \"CN\" .\n" +
+                "  ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
+                "  ?flow bont:hasObjectType / rdfs:label \"Basic iron and steel and of ferro-alloys and first products thereof\" .\n" +
+                "  ?flow om2:hasNumericalValue ?value .\n" +
+                "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
+                "}\n"
+      }
+
+      else if (queryType == "chinaActivitiesUsingSteel") {
+        query = ""
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+
+                "SELECT ?activityType (xsd:string(sum(?value)) as ?value)\n"
+
+        query += exiobase_graphs
+
+        query += "WHERE\n" +
+                "{\n" +
+                "  ?flow a bont:Flow .\n" +
+                "  ?flow bont:isInputOf ?act .\n" +
+                "  ?act bont:hasLocation / rdfs:label \"CN\" .\n" +
+                "  ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
+                "  ?flow bont:hasObjectType / rdfs:label \"Basic iron and steel and of ferro-alloys and first products thereof\" .\n" +
+                "  ?flow om2:hasNumericalValue ?value .\n" +
+                "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
+                "}\n" +
+                "GROUP BY ?activityType \n"
+      }
+
+      else if (queryType == "chinasteelparticulatematter") {
+        query = ""
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+
+                "SELECT (xsd:string(sum(?value)) as ?value) ?unit \n"
+
+        query += exiobase_graphs
+
+        query += "WHERE\n" +
+                "{\n" +
+                "VALUES ?pm {\"PM10\" \"PM2\.5\"\}" +
+                "  ?flow a bont:Flow .\n" +
+                "  ?flow bont:isOutputOf ?act .\n" +
+                "  ?act bont:hasLocation / rdfs:label \"CN\" .\n" +
+                "  ?act bont:hasActivityType / rdfs:label \"Manufacture of basic iron and steel and of ferro-alloys and first products thereof\" .\n" +
+                "  ?flow bont:hasObjectType / rdfs:label ?pm .\n" +
+                "  ?flow om2:hasNumericalValue ?value .\n" +
+                "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
+                "}\n" +
+                "GROUP BY ?unit \n"
+      }
+
+      else if (queryType == "chinaSteelCarbonDioxide") {
+        query = ""
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                "SELECT (xsd:string(sum(?value)) as ?value) ?unit \n"
+
+        query += exiobase_graphs
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?flow a bont:Flow .\n" +
+                 "  ?flow bont:isOutputOf ?act .\n" +
+                 "  ?act bont:hasLocation / rdfs:label \"CN\" .\n" +
+                 "  ?act bont:hasActivityType / rdfs:label \"Manufacture of basic iron and steel and of ferro-alloys and first products thereof\" .\n" +
+                 "  ?flow bont:hasObjectType / rdfs:label \"Carbon dioxide, fossil\" .\n" +
+                 "  ?flow om2:hasNumericalValue ?value .\n" +
+                 "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
+                 "}\n" +
+                 "GROUP BY ?unit \n"
+      }
+
+      else if (queryType == "isFlowDeterminingForActivity") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        activity_type_input = document.getElementById("activity_type_input")
+        object_type_input = document.getElementById("object_type_input")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\n" +
+
+                "SELECT (xsd:string(?z) as ?isDetermining) \n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  bind ( exists {\n" +
+                 "    ?xFlow bont:isOutputOf ?yActivity ;\n" +
+                 "      ^bont:hasDeterminingFlow ?yActivity ;\n" +
+                 "      bont:hasObjectType ?xObject .\n\n" +
+                 "    ?xObject rdfs:label \"" + object_type_input.value +  "\" .\n" +
+                 "    ?yActivity bont:hasActivityType / rdfs:label \"" + activity_type_input.value +  "\" .\n" +
+                 "  } as ?z)\n" +
+                 "}\n"
+      }
+
+      else if (queryType == "isFlowRequiredForActivity") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        activity_type_input = changeCounter > 0 ? document.getElementById("activity_type_input").value : "Cattle farming"
+        object_type_input = changeCounter > 0 ? document.getElementById("object_type_input").value : "Cattle"
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\n" +
+                "SELECT (xsd:string(?z) as ?isRequired) \n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  bind ( exists {\n" +
+                 "    ?xFlow bont:isInputOf ?yActivity ;\n" +
+                 "      ^bont:hasDeterminingFlow ?yActivity ;\n" +
+                 "      bont:hasObjectType ?xObject .\n\n" +
+                 "    ?xObject rdfs:label \"" + object_type_input +  "\" .\n" +
+                 "    ?yActivity bont:hasActivityType / rdfs:label \"" + activity_type_input +  "\" .\n" +
+                 "  } as ?z)\n" +
+                 "}\n"
+      }
+
+      else if (queryType == "listRequiredInputFlowsForActivities") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\n" +
+
+                "SELECT ?activity ?object \n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?xFlow bont:isInputOf ?yActivity ;\n" +
+                 "    ^bont:hasDeterminingFlow ?yActivity ;\n" +
+                 "    bont:hasObjectType ?xObject .\n\n" +
+                 "  ?xObject rdfs:label ?object .\n" +
+                 "  VALUES ?activity { \"Cattle farming\" \n" +
+                 "                     \"Recycling of waste and scrap\"\n" +
+                 "                     \"Manufacture of ceramic goods\"\n" +
+                 "                     \"Petroleum Refinery\"\n" +
+                 "                     \"Processed rice\"\n" +
+                 "                     \"Mining of iron ores\"} .\n" +
+                 "  ?yActivity bont:hasActivityType / rdfs:label ?activity .\n" +
+                 "}\n"
+      }
+
+      else if (queryType == "totalFlowInPeriod") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        object_type_input = document.getElementById("object_type_input").value.toLowerCase()
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n" +
+                "PREFIX btime: <http://rdf.bonsai.uno/time#>\n\n" +
+
+                "SELECT DISTINCT ?objectLabel (xsd:string(SUM(?n)) as ?sumOfFlow) ?u \n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?xObject a bont:FlowObject;\n" +
+                 "    rdfs:label ?objectLabel .\n\n" +
+
+                 "  filter contains(LCASE(?objectLabel),\"" + object_type_input +  "\")\n\n" +
+
+                 "  ?xFlow a bont:Flow ;\n" +
+                 "    bont:hasObjectType ?xObject ;\n" +
+                 "    om2:hasUnit ?u ;\n" +
+                 "    om2:hasNumericalValue ?n ;\n" +
+                 "    bont:isOutputOf ?a .\n\n" +
+                 "  ?a bont:hasTemporalExtent btime:2011 . \n" +
+                 "}\n" +
+                 "GROUP by ?u ?objectLabel"
+      }
+
+      else if (queryType == "unitTypesForFlows") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "SELECT DISTINCT ?flowObject ?unitLabel \n\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?x a bont:FlowObject ;\n" +
+                 "    rdfs:label ?flowObject .\n\n" +
+
+                 "  ?z a bont:Flow ;" +
+                 "    bont:hasObjectType ?x ;\n" +
+                 "    om2:hasUnit ?unit .\n\n" +
+
+                 "  ?unit rdfs:label ?unitLabel \n" +
+                 "}\n"
+      }
+
+      else if (queryType == "overBalancedFlows") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "SELECT ?floObj (xsd:string(?sumFlowOutput) as ?sumFlowOutput) (xsd:string(?sumFlowInput) as ?sumFlowInput) \n\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE {\n" +
+                 "  {\n" +
+                 "    SELECT ?floObj (SUM(?numericValueOutput) as ?sumFlowOutput) {\n" +
+                 "      ?flowOut bont:hasObjectType ?floObj ;\n\n" +
+                 "        bont:isOutputOf ?aO .\n\n" +
+
+                 "      ?flowOut om2:hasNumericalValue ?numericValueOutput .\n" +
+                 "    } GROUP BY ?floObj\n" +
+                 "  }\n\n" +
+                 "  {\n" +
+                 "    SELECT ?floObj (SUM(?numericValueInput) as ?sumFlowInput) {\n" +
+                 "      ?flowIn bont:hasObjectType ?floObj ;\n\n" +
+                 "        bont:isInputOf ?aI .\n\n" +
+
+                 "      ?flowIn om2:hasNumericalValue ?numericValueInput .\n" +
+                 "    } GROUP BY ?floObj\n" +
+                 "  }\n\n" +
+
+                 "  FILTER (?sumFlowOutput > ?sumFlowInput) \n" +
+                 "}\n" +
+                 "GROUP BY ?floObj ?sumFlowInput ?sumFlowOutput"
+      }
+
+      else if (queryType == "underBalancedFlows") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "SELECT ?floObj (xsd:string(?sumFlowOutput) as ?sumFlowOutput) (xsd:string(?sumFlowInput) as ?sumFlowInput) \n\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE {\n" +
+                 "  {\n" +
+                 "    SELECT ?floObj (SUM(?numericValueOutput) as ?sumFlowOutput) {\n" +
+                 "      ?flowOut bont:hasObjectType ?floObj ;\n\n" +
+                 "        bont:isOutputOf ?aO .\n\n" +
+
+                 "      ?flowOut om2:hasNumericalValue ?numericValueOutput .\n" +
+                 "    } GROUP BY ?floObj\n" +
+                 "  }\n\n" +
+                 "  {\n" +
+                 "    SELECT ?floObj (SUM(?numericValueInput) as ?sumFlowInput) {\n" +
+                 "      ?flowIn bont:hasObjectType ?floObj ;\n\n" +
+                 "        bont:isInputOf ?aI .\n\n" +
+
+                 "      ?flowIn om2:hasNumericalValue ?numericValueInput .\n" +
+                 "    } GROUP BY ?floObj\n" +
+                 "  }\n\n" +
+
+                 "  FILTER (?sumFlowInput > ?sumFlowOutput) \n" +
+                 "}\n" +
+                 "GROUP BY ?floObj ?sumFlowInput ?sumFlowOutput"
+      }
+
+      else if (queryType == "amountOfFlowUsedAsInputForActivity") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        object_type_input = changeCounter > 0 ? document.getElementById("object_type_input").value.toLowerCase() : "chemicals nec"
+        location_input = changeCounter > 0 ? document.getElementById("location_input").value : "DK"
+        activity_type_input = changeCounter > 0 ? document.getElementById("activity_type_input").value.toLowerCase() : "manufacture of fish products"
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX btime: <http://rdf.bonsai.uno/time#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "SELECT ?objectLabel ?activityLabel (xsd:string(sum(?v)) as ?value) ?unit  \n\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?flowObject rdfs:label ?objectLabel .\n" +
+                 "  filter contains(LCASE(?objectLabel),\"" + object_type_input +  "\")\n\n" +
+
+                 "  ?flow a bont:Flow ;\n" +
+                 "    om2:hasNumericalValue ?v ;\n" +
+                 "    bont:hasObjectType ?flowObject ;\n" +  
+                 "    bont:isInputOf ?a ;\n" +  
+                 "    om2:hasUnit ?unit .\n\n" +  
+
+                 "  ?a bont:hasActivityType ?at ;\n" +
+                 "    bont:hasLocation ?l ;\n" +
+                 "    bont:hasTemporalExtent btime:2011 .\n\n" +
+
+                 "  ?at rdfs:label ?activityLabel .\n" +
+                 "  filter contains(LCASE(?activityLabel),\"" + activity_type_input +  "\")\n\n" +
+
+                 "  ?l rdfs:label \"" + location_input +  "\".\n\n" +
+                 "}\n" +
+                 "GROUP BY ?unit ?objectLabel ?activityLabel"
+      }
+
+      else if (queryType == "amountOfFlowOutputOfObjectForActivity") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        object_type_input = changeCounter > 0 ? document.getElementById("object_type_input").value.toLowerCase() : "electricity by gas"
+        location_input = changeCounter > 0 ? document.getElementById("location_input").value : "CA"
+        activity_type_input = changeCounter > 0 ? document.getElementById("activity_type_input").value.toLowerCase() : "production of electricity by gas"
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX btime: <http://rdf.bonsai.uno/time#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "SELECT (xsd:string(sum(?v)) as ?value) ?unit \n\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?flowObject rdfs:label ?objectLabel .\n" +
+                 "  filter contains(LCASE(?objectLabel),\"" + object_type_input +  "\")\n\n" +
+
+                 "  ?flow a bont:Flow ;\n" +
+                 "    om2:hasNumericalValue ?v ;\n" +
+                 "    bont:hasObjectType ?flowObject ;\n" +  
+                 "    bont:isOutputOf ?a ;\n" +  
+                 "    om2:hasUnit ?unit .\n\n" +  
+
+                 "  ?a bont:hasActivityType ?at ;\n" +
+                 "    bont:hasLocation ?l ;\n" +
+                 "    bont:hasTemporalExtent btime:2011 .\n\n" +
+
+                 "  ?at rdfs:label ?activityLabel .\n" +
+                 "  filter contains(LCASE(?activityLabel),\"" + activity_type_input +  "\")\n\n" +
+
+                 "  ?l rdfs:label \"" + location_input +  "\".\n\n" +
+                 "}\n" +
+                 "GROUP BY ?unit"
+      }
+
+      else if (queryType == "activitiesAndDeterminingFlows") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        location_input = changeCounter > 0 ? document.getElementById("location_input").value : "DK"
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX btime: <http://rdf.bonsai.uno/time#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "SELECT ?flowObject ?activityType \n\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?f a bont:Flow ;\n" +
+                 "    bont:hasObjectType ?fobject .\n\n" +
+
+                 "  ?fobject rdfs:label ?flowObject .\n\n" +
+
+                 "  ?a a bont:Activity ;\n" +
+                 "    bont:hasDeterminingFlow ?f ;\n" +
+                 "    bont:hasLocation ?l ;\n" +  
+                 "    bont:hasTemporalExtent btime:2011 ;\n" +  
+                 "    bont:hasActivityType / rdfs:label ?activityType .\n\n" +  
+
+                 "  ?l rdfs:label \"" + location_input +  "\".\n" +
+                 "}\n"
+      }
+
+      return query
+    }
+</script> 
+ </body>
+</html>
