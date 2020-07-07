@@ -1,6 +1,6 @@
 # yasgui-query-interface
 
-This is the yasgui query interface which is used for querying the BONSAI database.
+This is the [yasgui](https://triply.cc/docs/yasgui-api) query interface which is used for querying the BONSAI database.
 The interface uses the yasgui interface, and is build in javascript.
 
 ## Installation
