@@ -26,6 +26,8 @@
           <option value="flowobject">Flow Objects</option>
           <option value="inputFlowLocation">Input Flows by Location</option>
           <option value="outputFlowLocation">Output Flows by Location</option>
+          <option value="activitesGivenFlowObject">Activities where Flowobject is an output</option>
+          <option value="flowLocationActivity">All flows given Location and Activity</option>
           <option value="chinaSteel">Production of Steel from China</option>
           <option value="chinaActivitiesUsingSteel">Chinese Activities using Steel</option>
           <option value="chinasteelparticulatematter">Chinese Particulate Matter Emission from Steel Production</option>
@@ -40,6 +42,10 @@
           <option value="amountOfFlowUsedAsInputForActivity">Amount of flowObject f used in Activity a in Location l</option>
           <option value="amountOfFlowOutputOfObjectForActivity">Amount of flowObject f as output of Activity a in Location l</option>
           <option value="activitiesAndDeterminingFlows">What are the determining flows for all activities in locaiton l</option>
+          <option value="determiningFlowOfActInLoc">What is the determining flow for Activity A in Location L</option>
+          <option value="allUnitsAsBalanceableProperties">What units can be used for Balanceable properties</option>
+          <option value="graphProvenance">Provenance of graph</option>
+          <option value="flowProvenance">Provenance of single flow</option>
           <option value="user">User Defined</option>
         </select>  
       </div>
@@ -96,7 +102,7 @@
     function newFields(queryType) {
       selectionFields = ""
       // Add database selection
-      if (["activitytype", "location", "flowobject",  "inputFlowLocation", "outputFlowLocation", "isFlowDeterminingForActivity", "isFlowRequiredForActivity", "listRequiredInputFlowsForActivities", "totalFlowInPeriod", "unitTypesForFlows", "overBalancedFlows", "underBalancedFlows", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows", "chinaSteel"].includes(queryType)) {
+      if (["activitytype", "location", "flowobject",  "inputFlowLocation", "outputFlowLocation", "isFlowDeterminingForActivity", "isFlowRequiredForActivity", "listRequiredInputFlowsForActivities", "totalFlowInPeriod", "unitTypesForFlows", "overBalancedFlows", "underBalancedFlows", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows", "chinaSteel", "flowLocationActivity", "activitesGivenFlowObject", "determiningFlowOfActInLoc", ].includes(queryType)) {
         selectionFields += '<select id="dataset" onchange="changeQueryText()">' +
                               '<option value="exiobase3_3_17" selected="selected" disabled="disabled">Select a dataset</option>' +
                               '<option value="exiobase3_3_17">Exiobase 3.3.17</option>' +
@@ -105,7 +111,7 @@
       }
 
       // Add location text search
-      if (["inputFlowLocation", "outputFlowLocation", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows"].includes(queryType)) {
+      if (["inputFlowLocation", "outputFlowLocation", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows", "flowLocationActivity", "determiningFlowOfActInLoc"].includes(queryType)) {
         selectionFields += '<form>' +
                             '<label for="location_input">Location: </label>' +
                             '<input id="location_input" name="location_input" type="text" value="DK" onKeyUp="changeQueryText()">' +
@@ -114,7 +120,7 @@
       }
 
       // Add flowObject text search
-      if (["isFlowDeterminingForActivity", "isFlowRequiredForActivity", "totalFlowInPeriod", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity"].includes(queryType)) {
+      if (["isFlowDeterminingForActivity", "isFlowRequiredForActivity", "totalFlowInPeriod", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitesGivenFlowObject"].includes(queryType)) {
         selectionFields += '<form>' +
                             '<label for="object_type_input">Flow Object: </label>' +
                             '<input id="object_type_input" name="object_type_input" type="text" value="Wheat" onKeyUp="changeQueryText()">' +
@@ -122,10 +128,26 @@
       }
 
       // Add ActivityType search Text
-      if (["isFlowDeterminingForActivity", "isFlowRequiredForActivity", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity"].includes(queryType)) {
+      if (["isFlowDeterminingForActivity", "isFlowRequiredForActivity", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "flowLocationActivity", "determiningFlowOfActInLoc"].includes(queryType)) {
         selectionFields += '<form>' +
                             '<label for="activity_type_input">Activity Type: </label>' +
                             '<input id="activity_type_input" name="activity_type_input" type="text" value="Cultivation of wheat" onKeyUp="changeQueryText()">' +
+                           '</form>'       
+      }
+
+      // Add Units search Text
+      if ([].includes(queryType)) {
+        selectionFields += '<form>' +
+                            '<label for="unit_type_input">Unit: </label>' +
+                            '<input id="unit_type_input" name="unit_type_input" type="text" value="om2:tonne" onKeyUp="changeQueryText()">' +
+                           '</form>'       
+      }
+
+      // Free input text
+      if (["graphProvenance", "flowProvenance"].includes(queryType)) {
+        selectionFields += '<form>' +
+                            '<label for="input_type_input">Input: </label>' +
+                            '<input id="input_type_input" name="input_type_input" type="text" value="hsup" onKeyUp="changeQueryText()">' +
                            '</form>'       
       }
 
@@ -149,6 +171,11 @@
                        "FROM <http://rdf.bonsai.uno/activitytype/ystafdb>\n" +
                        "FROM <http://rdf.bonsai.uno/unit>\n" +
                        "FROM <http://rdf.bonsai.uno/time>\n"
+
+      prov_graphs =   "FROM <http://rdf.bonsai.uno/prov/exiobase3_3_17>\n" +
+                      "FROM <http://rdf.bonsai.uno/foaf/exiobase3_3_17>\n" +
+                      "FROM <http://rdf.bonsai.uno/prov/ystafdb>\n" +
+                      "FROM <http://rdf.bonsai.uno/foaf/ystafdb>\n"
         
       query = ""
 
@@ -228,6 +255,46 @@
                 "}\n"
       }
 
+      else if (queryType == "flowLocationActivity") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        location_input = document.getElementById("location_input")
+        activity_type_input = document.getElementById("activity_type_input")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+
+                "SELECT ?flowObject (xsd:string(?value) as ?value) ?unit\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                "{\n" +
+                "  {\n" +
+                "    ?flow a bont:Flow .\n" +
+                "    ?flow bont:isOutputOf ?act .\n" +
+                "    ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\".\n" +
+                "    ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
+                "    ?flow bont:hasObjectType / rdfs:label ?flowObject .\n" +
+                "    ?flow om2:hasNumericalValue ?value .\n" +
+                "    ?flow om2:hasUnit / rdfs:label ?unit .\n" +
+                "  } UNION {\n" +
+                "    ?flow a bont:Flow .\n" +
+                "    ?flow bont:isInputOf ?act .\n" +
+                "    ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\".\n" +
+                "    ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
+                "    ?flow bont:hasObjectType / rdfs:label ?flowObject .\n" +
+                "    ?flow om2:hasNumericalValue ?value .\n" +
+                "    ?flow om2:hasUnit / rdfs:label ?unit .\n" +
+                "  }\n" +
+                "}\n"
+      }
+
       else if (queryType == "outputFlowLocation") {
         query = ""
         dataset = document.getElementById("dataset")
@@ -252,6 +319,36 @@
                 "  ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\".\n" +
                 "  ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
                 "  ?flow bont:hasObjectType / rdfs:label ?flowObject .\n" +
+                "  ?flow om2:hasNumericalValue ?value .\n" +
+                "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
+                "}\n"
+      }
+
+
+      else if (queryType == "activitesGivenFlowObject") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        object_type_input = document.getElementById("object_type_input")
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+
+                "SELECT ?activityType ?location (xsd:string(?value) as ?value) ?unit\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                "{\n" +
+                "  ?flow a bont:Flow .\n" +
+                "  ?flow bont:isOutputOf ?act .\n" +
+                "  ?act bont:hasLocation / rdfs:label ?location .\n" +
+                "  ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
+                "  ?flow bont:hasObjectType / rdfs:label \"" + object_type_input.value +  "\" .\n" +
                 "  ?flow om2:hasNumericalValue ?value .\n" +
                 "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
                 "}\n"
@@ -700,8 +797,108 @@
                  "}\n"
       }
 
+      else if (queryType == "determiningFlowOfActInLoc") {
+        query = ""
+        dataset = document.getElementById("dataset")
+        location_input = changeCounter > 0 ? document.getElementById("location_input").value : "DK"
+        activity_type_input = changeCounter > 0 ? document.getElementById("activity_type_input").value : "Cultivation of cereal grains nec"
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX btime: <http://rdf.bonsai.uno/time#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "SELECT ?FlowObject (xsd:string(sum(?value)) as ?value) ?unit \n\n"
+
+        if (dataset.value == "exiobase3_3_17") {
+          query += exiobase_graphs
+        }
+        else if (dataset.value == "ystafdb") {  
+          query += ystafdb_graphs
+        }
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?f a bont:Flow ;\n" +
+                 "    om2:hasNumericalValue ?value ;\n" +
+                 "    om2:hasUnit ?unit ;\n" +  
+                 "    bont:hasObjectType / rdfs:label ?FlowObject .\n\n" +
+
+                 "  ?a a bont:Activity ;\n" +
+                 "    bont:hasDeterminingFlow ?f ;\n" +
+                 "    bont:hasLocation ?l ;\n" +  
+                 "    bont:hasActivityType / rdfs:label \"" + activity_type_input +  "\" .\n\n" +  
+
+                 "  ?l rdfs:label \"" + location_input +  "\".\n" +
+                 "} GROUP by ?unit ?FlowObject\n"
+      }
+      
+      else if (queryType == "graphProvenance") {
+        query = ""
+        input_type_input = changeCounter > 0 ? document.getElementById("input_type_input").value : "<http://rdf.bonsai.uno/data/exiobase3_3_17/huse>"
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX btime: <http://rdf.bonsai.uno/time#>\n" +
+                "PREFIX prov: <http://www.w3.org/ns/prov#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "DESCRIBE ?provider\n\n"
+        
+        query += exiobase_graphs
+        query += ystafdb_graphs
+        query += prov_graphs
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  " + input_type_input +  " prov:wasGeneratedBy ?dataExtAct .\n" +
+                 "  ?dataExtAct prov:used ?dataset .\n" +
+                 "  ?dataset prov:wasAttributedTo ?provider .\n" +
+                 "}\n"
+      }
+
+      else if (queryType == "flowProvenance") {
+        query = ""
+        input_type_input = changeCounter > 0 ? document.getElementById("input_type_input").value : "<http://rdf.bonsai.uno/data/ystafdb/huse#F_25184>"
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX btime: <http://rdf.bonsai.uno/time#>\n" +
+                "PREFIX prov: <http://www.w3.org/ns/prov#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "DESCRIBE ?dataset\n\n"
+ 
+        query += ystafdb_graphs
+        query += prov_graphs
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?dataset prov:hadMember " + input_type_input + ".\n" +
+                 "  filter (contains(xsd:string(?dataset), \"dataset\")) .\n" +
+                 "}\n"
+      }
+
+      else if (queryType == "allUnitsAsBalanceableProperties") {
+        query = ""
+        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "PREFIX btime: <http://rdf.bonsai.uno/time#>\n" +
+                "PREFIX prov: <http://www.w3.org/ns/prov#>\n" +
+                "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
+                
+                "SELECT DISTINCT ?unit\n\n"
+ 
+        query += ystafdb_graphs
+        query += prov_graphs
+
+        query += "WHERE\n" +
+                 "{\n" +
+                 "  ?balance a bont:BalanceableProperty.\n" +
+                 "  ?balance om2:hasUnit ?unit\n" +
+                 "}\n"
+      }
+
       return query
     }
 </script> 
  </body>
 </html>
+
