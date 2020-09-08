@@ -1,7 +1,7 @@
 # yasgui-query-interface
 
 This is the [yasgui](https://triply.cc/docs/yasgui-api) query interface which is used for querying the BONSAI database.
-The interface uses the yasgui interface, and is build in javascript.
+The interface uses the yasgui interface, and is built using javascript.
 
 ## Installation
 
@@ -45,6 +45,10 @@ Extendign on the example, we have the query:
   }
 ```
 
-The `query` variable is what is displayed in in the yasgui query interface.
+The `query` variable is displayed in the yasgui query interface.
 The two variables `exiobase_graphs` and `ystafdb_graphs` can be used to easily import all 
 named graphs from the respective datasets. 
+
+## Contributing
+Please do not edit the scripts directly. All contributions should be via pull request. 
+
