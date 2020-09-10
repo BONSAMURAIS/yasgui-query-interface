@@ -24,8 +24,8 @@
           <option value="activitytype">Activity Types</option>
           <option value="location">Locations</option>
           <option value="flowobject">Flow Objects</option>
-          <option value="inputFlowLocation">Input Flows by Location</option>
-          <option value="outputFlowLocation">Output Flows by Location</option>
+          <option value="inputFlowofActivitybyLocation">Input Flows of an Activity by Location</option>
+          <option value="outputFlowofActivitybyLocation">Output Flows by Location</option>
           <option value="activitesGivenFlowObject">Activities where Flowobject is an output</option>
           <option value="flowLocationActivity">All flows given Location and Activity</option>
           <option value="chinaSteel">Production of Steel from China</option>
@@ -226,11 +226,12 @@
                  "}\n"
       }
 
-      else if (queryType == "inputFlowLocation") {
+      else if (queryType == "inputFlowofActivitybyLocation") {
         query = ""
         dataset = document.getElementById("dataset")
+        activity_type_input = document.getElementById("activity_type_input")
         location_input = document.getElementById("location_input")
-        query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
+                query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
                 "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
                 "PREFIX om2: <http://www.ontology-of-units-of-measure.org/resource/om-2/>\n\n" +
 
@@ -247,8 +248,8 @@
                 "{\n" +
                 "  ?flow a bont:Flow .\n" +
                 "  ?flow bont:isInputOf ?act .\n" +
+                "  ?act bont:hasActivityType / rdfs:label \"" + activity_type_input.value +  "\".\n" +
                 "  ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\".\n" +
-                "  ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
                 "  ?flow bont:hasObjectType / rdfs:label ?flowObject .\n" +
                 "  ?flow om2:hasNumericalValue ?value .\n" +
                 "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
@@ -278,16 +279,16 @@
                 "  {\n" +
                 "    ?flow a bont:Flow .\n" +
                 "    ?flow bont:isOutputOf ?act .\n" +
+                "    ?act bont:hasActivityType / rdfs:label \"" + activity_type_input.value +  "\".\n" +
                 "    ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\".\n" +
-                "    ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
                 "    ?flow bont:hasObjectType / rdfs:label ?flowObject .\n" +
                 "    ?flow om2:hasNumericalValue ?value .\n" +
                 "    ?flow om2:hasUnit / rdfs:label ?unit .\n" +
                 "  } UNION {\n" +
                 "    ?flow a bont:Flow .\n" +
                 "    ?flow bont:isInputOf ?act .\n" +
+                "    ?act bont:hasActivityType / rdfs:label \"" + activity_type_input.value +  "\".\n" +
                 "    ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\".\n" +
-                "    ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
                 "    ?flow bont:hasObjectType / rdfs:label ?flowObject .\n" +
                 "    ?flow om2:hasNumericalValue ?value .\n" +
                 "    ?flow om2:hasUnit / rdfs:label ?unit .\n" +
@@ -295,9 +296,10 @@
                 "}\n"
       }
 
-      else if (queryType == "outputFlowLocation") {
+      else if (queryType == "outputFlowofActivitybyLocation") {
         query = ""
         dataset = document.getElementById("dataset")
+        activity_type_input = document.getElementById("activity_type_input")
         location_input = document.getElementById("location_input")
         query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
                 "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
@@ -316,8 +318,8 @@
                 "{\n" +
                 "  ?flow a bont:Flow .\n" +
                 "  ?flow bont:isOutputOf ?act .\n" +
+                "  ?act bont:hasActivityType / rdfs:label \"" + activity_type_input.value +  "\".\n" +
                 "  ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\".\n" +
-                "  ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
                 "  ?flow bont:hasObjectType / rdfs:label ?flowObject .\n" +
                 "  ?flow om2:hasNumericalValue ?value .\n" +
                 "  ?flow om2:hasUnit / rdfs:label ?unit .\n" +
@@ -328,6 +330,7 @@
       else if (queryType == "activitesGivenFlowObject") {
         query = ""
         dataset = document.getElementById("dataset")
+        location_input = document.getElementById("location_input")
         object_type_input = document.getElementById("object_type_input")
         query = "PREFIX bont: <http://ontology.bonsai.uno/core#>\n" +
                 "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
@@ -346,7 +349,7 @@
                 "{\n" +
                 "  ?flow a bont:Flow .\n" +
                 "  ?flow bont:isOutputOf ?act .\n" +
-                "  ?act bont:hasLocation / rdfs:label ?location .\n" +
+                "  ?act bont:hasLocation / rdfs:label \"" + location_input.value +  "\" .\n" +
                 "  ?act bont:hasActivityType / rdfs:label ?activityType .\n" +
                 "  ?flow bont:hasObjectType / rdfs:label \"" + object_type_input.value +  "\" .\n" +
                 "  ?flow om2:hasNumericalValue ?value .\n" +
