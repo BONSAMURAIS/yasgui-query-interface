@@ -102,7 +102,7 @@
     function newFields(queryType) {
       selectionFields = ""
       // Add database selection
-      if (["activitytype", "location", "flowobject",  "inputFlowLocation", "outputFlowLocation", "isFlowDeterminingForActivity", "isFlowRequiredForActivity", "listRequiredInputFlowsForActivities", "totalFlowInPeriod", "unitTypesForFlows", "overBalancedFlows", "underBalancedFlows", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows", "chinaSteel", "flowLocationActivity", "activitesGivenFlowObject", "determiningFlowOfActInLoc", ].includes(queryType)) {
+      if (["activitytype", "location", "flowobject",  "inputFlowLocation", "outputFlowLocation", "isFlowDeterminingForActivity", "isFlowRequiredForActivity", "listRequiredInputFlowsForActivities", "totalFlowInPeriod", "unitTypesForFlows", "overBalancedFlows", "underBalancedFlows", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows", "chinaSteel", "flowLocationActivity", "activitesGivenFlowObject", "determiningFlowOfActInLoc", "inputFlowofActivitybyLocation", "outputFlowofActivitybyLocation"].includes(queryType)) {
         selectionFields += '<select id="dataset" onchange="changeQueryText()">' +
                               '<option value="exiobase3_3_17" selected="selected" disabled="disabled">Select a dataset</option>' +
                               '<option value="exiobase3_3_17">Exiobase 3.3.17</option>' +
@@ -111,7 +111,7 @@
       }
 
       // Add location text search
-      if (["inputFlowLocation", "outputFlowLocation", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows", "flowLocationActivity", "determiningFlowOfActInLoc"].includes(queryType)) {
+      if (["inputFlowLocation", "outputFlowLocation", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "activitiesAndDeterminingFlows", "flowLocationActivity", "determiningFlowOfActInLoc", "inputFlowofActivitybyLocation", "outputFlowofActivitybyLocation"].includes(queryType)) {
         selectionFields += '<form>' +
                             '<label for="location_input">Location: </label>' +
                             '<input id="location_input" name="location_input" type="text" value="DK" onKeyUp="changeQueryText()">' +
@@ -128,7 +128,7 @@
       }
 
       // Add ActivityType search Text
-      if (["isFlowDeterminingForActivity", "isFlowRequiredForActivity", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "flowLocationActivity", "determiningFlowOfActInLoc"].includes(queryType)) {
+      if (["isFlowDeterminingForActivity", "isFlowRequiredForActivity", "amountOfFlowUsedAsInputForActivity", "amountOfFlowOutputOfObjectForActivity", "flowLocationActivity", "determiningFlowOfActInLoc", "inputFlowofActivitybyLocation", "outputFlowofActivitybyLocation"].includes(queryType)) {
         selectionFields += '<form>' +
                             '<label for="activity_type_input">Activity Type: </label>' +
                             '<input id="activity_type_input" name="activity_type_input" type="text" value="Cultivation of wheat" onKeyUp="changeQueryText()">' +
@@ -904,4 +904,3 @@
 </script> 
  </body>
 </html>
-
